@@ -1,15 +1,18 @@
 package main
 
 import (
-	"os"
-	"log"
 	"fmt"
 	"image"
+	"image/gif"
+	"image/jpeg"
 	"image/png"
+	"log"
+	"os"
+	"strings"
 )
 
 type img struct {
-	file *os.File
+	file   *os.File
 	config image.Config
 }
 
@@ -20,8 +23,16 @@ func (i *img) Load(path string) *img {
 	}
 	i.file = file
 
-	// fixme
-	config, err := png.DecodeConfig(file)
+	var config image.Config
+	switch i.Ext() {
+	default:
+		config, err = jpeg.DecodeConfig(file)
+	case "gif":
+		config, err = gif.DecodeConfig(file)
+	case "png":
+		config, err = png.DecodeConfig(file)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,6 +47,12 @@ func (i *img) Name() string {
 		log.Fatal(err)
 	}
 	return stat.Name()
+}
+
+func (i *img) Ext() (ext string) {
+	name := i.Name()
+	ext = strings.Split(name, ".")[1]
+	return ext
 }
 
 func (i *img) Size() int64 {
@@ -73,14 +90,17 @@ func (i *img) Output() {
 	fmt.Printf("width: %dpx\nheight: %dpx\nsize: %d%s\n", i.Width(), i.Height(), size, t)
 }
 
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Printf("Usage: %s <path/to/image>\n", os.Args[0]);
-		return;
-	}
-
+func Run() {
 	i := new(img)
 	i.Load(os.Args[1])
 	i.Output()
 	i.CloseFile()
+}
+
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Printf("Usage: %s <path/to/image>\n", os.Args[0])
+		return
+	}
+	Run()
 }
