@@ -11,9 +11,9 @@ import (
 )
 
 type img struct {
-	file *os.File
+	file          *os.File
 	width, height int
-	size int64
+	size          int64
 }
 
 func (i *img) Load(path string) (file *os.File, err error) {
