@@ -6,25 +6,34 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"image/png"
-	"log"
 	"os"
 	"strings"
 )
 
 type img struct {
-	file   *os.File
-	config image.Config
+	file *os.File
+	width, height int
+	size int64
 }
 
-func (i *img) Load(path string) *img {
-	file, err := os.Open(path)
+func (i *img) Load(path string) (file *os.File, err error) {
+	file, err = os.Open(path)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	i.file = file
 
+	stat, err := file.Stat()
+	if err != nil {
+		return file, err
+	}
+
+	i.size = stat.Size()
+
+	var ext string = strings.Split(stat.Name(), ".")[1]
 	var config image.Config
-	switch i.Ext() {
+
+	switch ext {
 	default:
 		config, err = jpeg.DecodeConfig(file)
 	case "gif":
@@ -34,67 +43,38 @@ func (i *img) Load(path string) *img {
 	}
 
 	if err != nil {
-		log.Fatal(err)
+		return file, err
 	}
-	i.config = config
 
-	return i
+	i.width = config.Width
+	i.height = config.Height
+	return file, nil
 }
 
-func (i *img) Name() string {
-	stat, err := i.file.Stat()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return stat.Name()
-}
-
-func (i *img) Ext() (ext string) {
-	name := i.Name()
-	ext = strings.Split(name, ".")[1]
-	return ext
-}
-
-func (i *img) Size() int64 {
-	stat, err := i.file.Stat()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return stat.Size()
-}
-
-func (i *img) Width() int {
-	return i.config.Width
-}
-
-func (i *img) Height() int {
-	return i.config.Height
-}
-
-func (i *img) CloseFile() {
-	i.file.Close()
-}
-
-func (i *img) Output() {
+func (i *img) Print() {
 	var size int64
 	var t string
 
-	if i.Size() < 1000 {
-		size = i.Size()
+	if i.size < 1000 {
+		size = i.size
 		t = "B"
 	} else {
-		size = i.Size() / 1000
+		size = i.size / 1000
 		t = "KB"
 	}
 
-	fmt.Printf("width: %dpx\nheight: %dpx\nsize: %d%s\n", i.Width(), i.Height(), size, t)
+	fmt.Printf("width: %dpx\nheight: %dpx\nsize: %d%s\n", i.width, i.height, size, t)
 }
 
 func Run() {
 	i := new(img)
-	i.Load(os.Args[1])
-	i.Output()
-	i.CloseFile()
+	_, err := i.Load(os.Args[1])
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer i.file.Close()
+	i.Print()
 }
 
 func main() {
