@@ -3,11 +3,10 @@ package main
 import (
 	"fmt"
 	"image"
-	"image/gif"
-	"image/jpeg"
-	"image/png"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"os"
-	"strings"
 )
 
 type img struct {
@@ -16,8 +15,8 @@ type img struct {
 	size          int64
 }
 
-func (i *img) Load(path string) (file *os.File, err error) {
-	file, err = os.Open(path)
+func (i *img) Load(path string) (*os.File, error) {
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -28,24 +27,12 @@ func (i *img) Load(path string) (file *os.File, err error) {
 		return file, err
 	}
 
-	i.size = stat.Size()
-
-	var ext string = strings.Split(stat.Name(), ".")[1]
-	var config image.Config
-
-	switch ext {
-	default:
-		config, err = jpeg.DecodeConfig(file)
-	case "gif":
-		config, err = gif.DecodeConfig(file)
-	case "png":
-		config, err = png.DecodeConfig(file)
-	}
-
+	config, _, err := image.DecodeConfig(file)
 	if err != nil {
 		return file, err
 	}
 
+	i.size = stat.Size()
 	i.width = config.Width
 	i.height = config.Height
 	return file, nil
