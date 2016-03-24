@@ -1,6 +1,6 @@
 # imgstat
 
-Prints the width, height and size (bytes) of an image.
+Prints the size (bytes), width and height of an image.
 
 ### Usage
 
@@ -9,10 +9,9 @@ Prints the width, height and size (bytes) of an image.
 ### Example
 
 ```
-$ imgstat ./examples/debian.png
-width: 331px
-height: 350px
-size: 25KB
+$ imgstat example.png
+25KB    331x350
+# <size>    <width>x<height>
 ```
 
 ### Author

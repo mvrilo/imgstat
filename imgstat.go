@@ -1,73 +1,87 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"image"
+	"os"
+
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
-	"os"
 )
 
+const help = `imgstat - utility to know the size, width and height of an image.
+Usage:
+	%s [-hv] <path/to/image>
+`
+
 type img struct {
-	file          *os.File
-	width, height int
-	size          int64
+	height  int
+	width   int
+	size    int64
+	verbose bool
 }
 
-func (i *img) Load(path string) (*os.File, error) {
+func open(path string) (*img, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	i.file = file
+	defer file.Close()
 
 	stat, err := file.Stat()
 	if err != nil {
-		return file, err
+		return nil, err
 	}
 
 	config, _, err := image.DecodeConfig(file)
 	if err != nil {
-		return file, err
+		return nil, err
 	}
 
-	i.size = stat.Size()
-	i.width = config.Width
-	i.height = config.Height
-	return file, nil
+	return &img{
+		size:   stat.Size(),
+		width:  config.Width,
+		height: config.Height,
+	}, nil
 }
 
-func (i *img) Print() {
-	var size int64
-	var t string
+// String formats the output the image data
+func (i *img) String() string {
+	size := i.size
+	unit := "B"
 
-	if i.size < 1000 {
-		size = i.size
-		t = "B"
-	} else {
+	if i.size >= 1000 {
 		size = i.size / 1000
-		t = "KB"
+		unit = "KB"
 	}
 
-	fmt.Printf("width: %dpx\nheight: %dpx\nsize: %d%s\n", i.width, i.height, size, t)
-}
-
-func Run() {
-	i := new(img)
-	_, err := i.Load(os.Args[1])
-	if err != nil {
-		fmt.Println(err)
-		return
+	output := "%d%s\t%dx%d"
+	if i.verbose {
+		output = "size: %d%s\nwidth: %dpx\nheight: %dpx"
 	}
-	defer i.file.Close()
-	i.Print()
+	return fmt.Sprintf(output, size, unit, i.width, i.height)
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Printf("Usage: %s <path/to/image>\n", os.Args[0])
+	h := flag.Bool("h", false, "Usage information")
+	v := flag.Bool("v", false, "Verbose output")
+	flag.Parse()
+
+	if *h || len(flag.Args()) == 0 {
+		os.Stderr.WriteString(fmt.Sprintf(help, os.Args[0]))
+		os.Exit(1)
 		return
 	}
-	Run()
+
+	i, err := open(flag.Args()[0])
+	if err != nil {
+		os.Stderr.WriteString(err.Error() + "\n")
+		os.Exit(1)
+		return
+	}
+
+	i.verbose = *v
+	fmt.Println(i)
 }
