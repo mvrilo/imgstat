@@ -1,3 +1,5 @@
+[![Build Status](https://secure.travis-ci.org/mvrilo/imgstat.png)](http://travis-ci.org/mvrilo/imgstat)
+
 # imgstat
 
 Prints the size (bytes), width and height of an image.
