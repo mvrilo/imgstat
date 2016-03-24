@@ -6,7 +6,12 @@ Prints the size (bytes), width and height of an image.
 
 ### Usage
 
-    $ imgstat <path/to/image>
+```
+$ imgstat
+imgstat - utility to know the size, width and height of an image.
+Usage:
+        imgstat [-hv] <path/to/image>
+```
 
 ### Example
 
